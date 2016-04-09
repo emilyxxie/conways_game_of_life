@@ -1,15 +1,15 @@
 var cells = [];
 var cellsBuffer = []; // as states change on the board, we need a buffer to compare states
-var screenWidth = 800; //screen.availWidth;
-var screenHeight = 400; //screen.availHeight;
+var screenWidth = 800;//screen.availWidth;
+var screenHeight = 400;//screen.availHeight;
 var cellSize = 40;
-var aliveProbability = 15; // percent chance that cell is alive upon seed
+var aliveProbability = 5; // percent chance that cell is alive upon seed
 
 function setup() {
   createCanvas(screenWidth, screenHeight);
   background(0);
   populateGrid();
-  noLoop();
+  // noLoop();
 }
 
 function draw() {
@@ -17,22 +17,30 @@ function draw() {
   var changedCells = [];
   cells.forEach(function(row, row_index) {
     row.forEach(function(cell, column_index) {
-      applyLifeRules(cell);
+      // collect cell if it changes state when life rules applied
+      if (applyLifeRules(cell)) {
+        changedCells.push(cell);
+      }
       fill(cell.r, cell.g, cell.b);
       rect(cell.x, cell.y, cellSize, cellSize);
     });
   });
 
+  changedCells.forEach(function(changedCell, index) {
+    // replace old cell in buffer with new cell
+    cellsBuffer[changedCell.row][changedCell.column] = changedCell;
+  });
+
 }
 
 function applyLifeRules(cell) {
-  // var eighbors = 0;
 
+  var totalNeighbors = 0;
   function _countAliveNeighbors(row, column) {
     if (cellsBuffer[row] && cellsBuffer[row][column]) {
       var neighborCell = cellsBuffer[row][column];
       if (neighborCell.alive) {
-        cell.neighbors++;
+        totalNeighbors++;
       }
     }
   }
@@ -46,31 +54,27 @@ function applyLifeRules(cell) {
   _countAliveNeighbors(cell.row + 1, cell.column - 1);  // bottom left
   _countAliveNeighbors(cell.row, cell.column - 1);      // left
 
-  console.log("Cell in consideration: ");
-  console.log(cell);
-  console.log(cell.neighbors);
-  // console.log();
-  console.log("----------");
-
-
   /* Apply Conway's life rules to cell:
      1. Any live cell with fewer than two live neighbors dies, as if caused by under-population.
      2. Any live cell with more than three live neighbours dies, as if by over-population.
      3. Any live cell with two or three live neighbours lives on to the next generation.
      4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction. */
-  // if (cell.alive) {
-  //   if (totalNeighbors < 2 || totalNeighbors > 3) {
-  //     cell.die();
-  //   } else if (totalNeighbors == 2 || totalNeighbors == 3) {
-  //   // increment color
-  //   }
-  // }
-  // if (totalNeighbors)
-  // } else {
-  //   if (totalNeighbors == 3) {
-  //     cell.birth();
-  //   }
-  // }
+  var cellChanged = false;
+  if (cell.alive) {
+    if (totalNeighbors < 2 || totalNeighbors > 3) {
+      cell.die();
+      cellChanged = true;
+
+    } else if (totalNeighbors == 2 || totalNeighbors == 3) {
+    // increment color
+    }
+  } else {
+    if (totalNeighbors == 3) {
+      cell.birth();
+      cellChanged = true;
+    }
+  }
+  return cellChanged;
 
 }
 
@@ -90,7 +94,7 @@ function populateGrid() {
     for (var j = 0; j < columns; j++) {
       cell = new Cell(x, y, i, j);
       cells[i].push(cell);
-      cellsBuffer.push(cell);
+      cellsBuffer[i].push(cell);
       x += cellSize;
     }
     y += cellSize;
@@ -108,7 +112,6 @@ function Cell(x, y, row, column) {
   this.r = 0;
   this.g = 0;
   this.b = this.alive ? 100 : 0;
-  this.neighbors = 0;
 
   this.die = function() {
     this.b = 0;
