@@ -3,12 +3,24 @@ var cellsBuffer = [];
 var screenWidth = 800;//screen.availWidth;
 var screenHeight = 400;//screen.availHeight;
 var cellSize = 40;
+var aliveProbability = 15; // percent chance that cell is alive upon seed
 
 function setup() {
   createCanvas(screenWidth, screenHeight);
   background(0);
   createCellGrid();
   noLoop();
+}
+
+function draw() {
+  var b = 0;
+  cells.forEach(function(row, row_index) {
+    row.forEach(function(cell, column_index) {
+      fill(cell.r, cell.g, cell.b);
+      rect(cell.x, cell.y, cellSize, cellSize);
+    });
+
+  });
 }
 
 function createCellGrid() {
@@ -30,10 +42,6 @@ function createCellGrid() {
     }
     y += cellSize;
   }
-  console.log(cells);
-
-  console.log("rows:" + rows);
-  console.log("columns:" + columns);
 }
 
 function Cell(x, y, row, column) {
@@ -41,8 +49,14 @@ function Cell(x, y, row, column) {
   this.y = y;
   this.row = row;
   this.column = column;
-  this.height = cellSize;
-  this.width = cellSize;
-  this.alive = false;
+  this.alive = random(1, 100) <= aliveProbability;
+  this.r = 0;
+  this.g = 0;
+
+  if (this.alive) {
+    this.b = 100;
+  } else {
+    this.b = 0;
+  }
 
 }
