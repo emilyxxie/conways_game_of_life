@@ -1,38 +1,44 @@
 var cells = [];
 var cellsBuffer = []; // as states change on the board, we need a buffer to compare states
-var screenWidth = 800;//screen.availWidth;
-var screenHeight = 400;//screen.availHeight;
-var cellSize = 40;
-var aliveProbability = 5; // percent chance that cell is alive upon seed
+var screenWidth = screen.availWidth;
+var screenHeight = screen.availHeight;
+var cellSize = 10;
+var aliveProbability = 15; // percent chance that cell is alive upon seed
 
 function setup() {
   createCanvas(screenWidth, screenHeight);
-  background(0);
+  background(100);
+  frameRate(5);
   populateGrid();
-  // noLoop();
 }
 
 function draw() {
-  // keep track of all cells that changed when life's rules are applied
+  // array to collect any cell that changes state when life rules applied
   var changedCells = [];
   cells.forEach(function(row, row_index) {
     row.forEach(function(cell, column_index) {
-      // collect cell if it changes state when life rules applied
+      fill(cell.r, cell.g, cell.b);
+      rect(cell.x, cell.y, cellSize, cellSize);
       if (applyLifeRules(cell)) {
         changedCells.push(cell);
       }
-      fill(cell.r, cell.g, cell.b);
-      rect(cell.x, cell.y, cellSize, cellSize);
     });
   });
 
   changedCells.forEach(function(changedCell, index) {
-    // replace old cell in buffer with new cell
-    cellsBuffer[changedCell.row][changedCell.column] = changedCell;
+    // replace qualities in buffer with new cell
+    bufferCell = cellsBuffer[changedCell.row][changedCell.column];
+    bufferCell.alive = changedCell.alive;
+    bufferCell.b = changedCell.b;
   });
 
 }
 
+/* Detect all neighbors for a given cell and then apply Conway's life rules:
+ 1. Any live cell with fewer than two live neighbors dies, as if caused by under-population.
+ 2. Any live cell with more than three live neighbours dies, as if by over-population.
+ 3. Any live cell with two or three live neighbours lives on to the next generation.
+ 4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction. */
 function applyLifeRules(cell) {
 
   var totalNeighbors = 0;
@@ -54,19 +60,13 @@ function applyLifeRules(cell) {
   _countAliveNeighbors(cell.row + 1, cell.column - 1);  // bottom left
   _countAliveNeighbors(cell.row, cell.column - 1);      // left
 
-  /* Apply Conway's life rules to cell:
-     1. Any live cell with fewer than two live neighbors dies, as if caused by under-population.
-     2. Any live cell with more than three live neighbours dies, as if by over-population.
-     3. Any live cell with two or three live neighbours lives on to the next generation.
-     4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction. */
   var cellChanged = false;
   if (cell.alive) {
     if (totalNeighbors < 2 || totalNeighbors > 3) {
       cell.die();
       cellChanged = true;
-
     } else if (totalNeighbors == 2 || totalNeighbors == 3) {
-    // increment color
+      // eventually start playing with incrementing color
     }
   } else {
     if (totalNeighbors == 3) {
@@ -75,7 +75,6 @@ function applyLifeRules(cell) {
     }
   }
   return cellChanged;
-
 }
 
 function populateGrid() {
@@ -92,37 +91,43 @@ function populateGrid() {
     cells.push([]);
     cellsBuffer.push([]);
     for (var j = 0; j < columns; j++) {
-      cell = new Cell(x, y, i, j);
+      alive = random(1, 100) <= aliveProbability;
+      cell = new Cell(x, y, i, j, alive);
+      cellCopy = new Cell(x, y, i, j, alive);
       cells[i].push(cell);
-      cellsBuffer[i].push(cell);
+      cellsBuffer[i].push(cellCopy);
       x += cellSize;
     }
     y += cellSize;
   }
 }
 
-function Cell(x, y, row, column) {
+function Cell(x, y, row, column, alive) {
   this.x = x;
   this.y = y;
   this.row = row;
   this.column = column;
-  this.alive = random(1, 100) <= aliveProbability;
+  this.neighbors = 0;
+  this.alive = alive;
 
   // set colors for drawing
-  this.r = 0;
-  this.g = 0;
-  this.b = this.alive ? 100 : 0;
+  this.r = 20;
+  this.g = 20;
+  this.b = this.alive ? 200 : 0;
 
   this.die = function() {
-    this.b = 0;
+    this.r = 20;
+    this.b = 20;
+    this.g = 20;
     this.alive = false;
   }
 
   this.birth = function() {
-    this.b = 100;
+    this.b = 200;
+    this.r = 20;
+    this.g = 20;
     this.alive = true;
   }
 
+
 }
-
-
