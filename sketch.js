@@ -4,26 +4,37 @@ var screenWidth = screen.availWidth;
 var screenHeight = screen.availHeight;
 var cellSize = 10;
 var aliveProbability = 15; // percent chance that cell is alive upon seed
+var colors;
+var birthColor = 0;
+var colorIncrement = 5;
+var totalColors = 360;
 
 function setup() {
   createCanvas(screenWidth, screenHeight);
   background(100);
-  frameRate(5);
+  // create an array of all 360 colors on HSL spectrum to loop through
+  // this prevents caching
+  colors = Array.apply(null, Array(totalColors)).map(function(_, num) {
+    return color('hsl(' + num + ',100%, 50%)');
+  });
   populateGrid();
 }
 
 function draw() {
   // array to collect any cell that changes state when life rules applied
   var changedCells = [];
-  cells.forEach(function(row, row_index) {
-    row.forEach(function(cell, column_index) {
-      fill(cell.r, cell.g, cell.b);
+  cells.forEach(function(row) {
+    row.forEach(function(cell) {
+      fill(cell.color);
       rect(cell.x, cell.y, cellSize, cellSize);
       if (applyLifeRules(cell)) {
         changedCells.push(cell);
       }
     });
   });
+
+  birthColor += (colorIncrement / 5);
+  birthColor = birthColor % totalColors;
 
   changedCells.forEach(function(changedCell, index) {
     // replace qualities in buffer with new cell
@@ -66,12 +77,14 @@ function applyLifeRules(cell) {
       cell.die();
       cellChanged = true;
     } else if (totalNeighbors == 2 || totalNeighbors == 3) {
-      // eventually start playing with incrementing color
+      cell.incrementColor();
     }
   } else {
     if (totalNeighbors == 3) {
       cell.birth();
       cellChanged = true;
+    } else {
+      // cell.fade();
     }
   }
   return cellChanged;
@@ -109,25 +122,27 @@ function Cell(x, y, row, column, alive) {
   this.column = column;
   this.neighbors = 0;
   this.alive = alive;
+  this.colorKey = 0;
+  this.colorFade = 0;
 
   // set colors for drawing
-  this.r = 20;
-  this.g = 20;
-  this.b = this.alive ? 200 : 0;
+  this.color = this.alive ? colors[birthColor] : color('hsl(1 ,100%, 0%)');
 
   this.die = function() {
-    this.r = 20;
-    this.b = 20;
-    this.g = 20;
+    this.color = color('hsl(1 ,100%, 0%)');
     this.alive = false;
+
   }
 
   this.birth = function() {
-    this.b = 200;
-    this.r = 20;
-    this.g = 20;
+    this.color = colors[birthColor];
     this.alive = true;
   }
 
+  this.incrementColor = function() {
+    this.colorKey += colorIncrement;
+    this.colorKey = this.colorKey % totalColors;
+    this.color = colors[this.colorKey];
+  }
 
 }
